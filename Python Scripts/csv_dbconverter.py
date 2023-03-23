@@ -124,24 +124,36 @@ for url in urls:
     print("")
     file_index += 1
 
+# for item in data:
+#     # check if the item already exists in the database
+#     query = "SELECT * FROM my_table WHERE id = ?"
+#     cursor1.execute(query, (item['id'],))
+#     result = cursor.fetchone()
+#     if not result:
+#         # insert new item into the database
+#         query = "INSERT INTO my_table (id, name, value) VALUES (?, ?, ?)"
+#         values = (item['id'], item['name'], item['value'])
+#         cursor.execute(query, values)
+
 # Read sqlite query results into a pandas DataFrame
 con1 = sqlite3.connect("PeruData.db")
 print(con1)
 
 cursor1 = con1.cursor()
 
+
 # Create table to store Death Data
 cursor1.execute('''CREATE TABLE IF NOT EXISTS Deaths
-                 (fecha_recopilacion TEXT NOT NULL,
-                  fecha_resultado TEXT NOT NULL,
-                  edad INTEGER,
-                  sexo TEXT NOT NULL,
-                  criterio_fallecido TEXT NOT NULL,
-                  departamento TEXT NOT NULL,
-                  provincia TEXT NOT NULL,
-                  distrito TEXT NOT NULL,
-                  UBIGEO INTEGER,
-                  UUID INTEGER)''')
+                     (fecha_recopilacion TEXT NOT NULL,
+                      fecha_resultado TEXT NOT NULL,
+                      edad INTEGER,
+                      sexo TEXT NOT NULL,
+                      criterio_fallecido TEXT NOT NULL,
+                      departamento TEXT NOT NULL,
+                      provincia TEXT NOT NULL,
+                      distrito TEXT NOT NULL,
+                      UBIGEO INTEGER,
+                      UUID INTEGER)''')
 # Insert data into death table
 feature = ['fecha_recopilacion', 'fecha_resultado', 'edad', 'sexo', 'criterio_fallecido', 'departamento', 'provincia', 'distrito', 'UBIGEO','UUID']
 death_data = pd.read_csv(file_names[1])
@@ -150,8 +162,15 @@ death_data.to_sql('Deaths', con1, if_exists='append', index=False)
 
 df_deaths = pd.read_sql_query("SELECT * from Deaths", con1)
 
+# Merge existing data with new data
+merged_data = pd.concat([df_deaths, pd.DataFrame()], ignore_index=True).drop_duplicates(subset='UUID', keep='last')
+
+# Write merged data to the database
+merged_data.to_sql('Deaths', con1, if_exists='replace', index=False)
+
+
 # sort based on date acquired (fecha_resultado) feature.
-df_deaths_sorted = df_deaths.sort_values(by='fecha_resultado')
+df_deaths_sorted = merged_data.sort_values(by='fecha_resultado')
 
 df_deaths_sorted.drop('fecha_recopilacion', axis=1, inplace=True)
 
@@ -160,16 +179,16 @@ today = date.today()
 today_str = str(today)
 file_name = 'Deaths_'+today_str+'.csv'
 # print(file_name)
-print(file_names[1])
+#print(file_names[1])
 df = pd.read_csv(file_names[1])
 
 
 # sort based on date acquired (fecha_resultado) feature.
 df = df.sort_values(by='fecha_resultado')
 df.drop('fecha_recopilacion', axis=1, inplace=True)
-print("database df rows: ", df_deaths_sorted.shape[0])
-print(df_deaths_sorted.tail(5))
-print("yesterday's df rows: ", df.shape[0])
+#print("database df rows: ", df_deaths_sorted.shape[0])
+#print(df_deaths_sorted.tail(5))
+#print("yesterday's df rows: ", df.shape[0])
 
 if df.shape[0]>df_deaths_sorted.shape[0]:
     df3 = df[df_deaths_sorted.shape[0]:]
@@ -184,9 +203,9 @@ df.drop('index', axis=1, inplace=True)
 df_deaths_sorted.drop('index', axis=1, inplace=True)
 
 
-#print(df3)
-print(df.tail(31))
-print(df_deaths_sorted.tail(31))
+# #print(df3)
+# print(df.tail(31))
+# print(df_deaths_sorted.tail(31))
 
 
 # Positive Cases
@@ -215,8 +234,14 @@ cases_data.to_sql('Positive_Cases', con1, if_exists='append', index=False)
 
 df_cases = pd.read_sql_query("SELECT * from Positive_Cases", con1)
 
+# Merge existing data with new data
+merged_data1 = pd.concat([df_cases, pd.DataFrame()], ignore_index=True).drop_duplicates(subset='UUID', keep='last')
+
+# Write merged data to the database
+merged_data1.to_sql('Positive_Cases', con1, if_exists='replace', index=False)
+
 # sort based on date acquired (fecha_resultado) feature.
-df_cases_sorted = df_cases.sort_values(by='fecha_resultado')
+df_cases_sorted = merged_data1.sort_values(by='fecha_resultado')
 
 df_cases_sorted.drop('fecha_recopilacion', axis=1, inplace=True)
 
@@ -224,17 +249,17 @@ df_cases_sorted.drop('fecha_recopilacion', axis=1, inplace=True)
 today1 = date.today()
 today_str1 = str(today1)
 file_name = 'Positive_Cases_'+today_str+'.csv'
-# print(file_name)
-print(file_names[0])
+# # print(file_name)
+# print(file_names[0])
 df1 = pd.read_csv(file_names[0])
 
 
 # sort based on date acquired (fecha_resultado) feature.
 df1 = df1.sort_values(by='fecha_resultado')
 df1.drop('fecha_recopilacion', axis=1, inplace=True)
-print("database df rows: ", df_cases_sorted.shape[0])
-print(df_cases_sorted.tail(5))
-print("yesterday's df rows: ", df1.shape[0])
+# print("database df rows: ", df_cases_sorted.shape[0])
+# print(df_cases_sorted.tail(5))
+# print("yesterday's df rows: ", df1.shape[0])
 
 if df1.shape[0]>df_cases_sorted.shape[0]:
     df3_1 = df1[df_cases_sorted.shape[0]:]
@@ -250,8 +275,8 @@ df_cases_sorted.drop('index', axis=1, inplace=True)
 
 
 # print(df3_1)
-print(df1.tail(31))
-print(df_cases_sorted.tail(31))
+# print(df1.tail(31))
+# print(df_cases_sorted.tail(31))
 
 
 # Create table to store DHV Data
@@ -300,8 +325,14 @@ DHV_data.to_sql('DHV', con1, if_exists='append', index=False)
 
 df_DHV = pd.read_sql_query("SELECT * from DHV", con1)
 
+# Merge existing data with new data
+merged_data2 = pd.concat([df_DHV, pd.DataFrame()], ignore_index=True).drop_duplicates(subset='UUID', keep='last')
+
+# Write merged data to the database
+merged_data2.to_sql('DHV', con1, if_exists='replace', index=False)
+
 # sort based on date acquired (fecha_resultado) feature.
-df_DHV_sorted = df_DHV.sort_values(by='fecha_resultado')
+df_DHV_sorted = merged_data2.sort_values(by='fecha_resultado')
 
 df_DHV_sorted.drop('fecha_recopilacion', axis=1, inplace=True)
 
@@ -309,17 +340,17 @@ df_DHV_sorted.drop('fecha_recopilacion', axis=1, inplace=True)
 today2 = date.today()
 today_str2 = str(today2)
 # file_name = 'DHV_'+today_str+'.csv'
-# print(file_name)
-print(file_names[2])
+# # print(file_name)
+# print(file_names[2])
 df2 = pd.read_csv(file_names[2])
 
 
 # sort based on date acquired (fecha_resultado) feature.
 df2 = df2.sort_values(by='fecha_resultado')
 df2.drop('fecha_recopilacion', axis=1, inplace=True)
-print("database df2 rows: ", df_DHV_sorted.shape[0])
-print(df_DHV_sorted.tail(5))
-print("yesterday's df2 rows: ", df2.shape[0])
+# print("database df2 rows: ", df_DHV_sorted.shape[0])
+# print(df_DHV_sorted.tail(5))
+# print("yesterday's df2 rows: ", df2.shape[0])
 
 if df2.shape[0]>df_DHV_sorted.shape[0]:
     df4 = df2[df_DHV_sorted.shape[0]:]
@@ -334,9 +365,9 @@ df2.drop('index', axis=1, inplace=True)
 df_DHV_sorted.drop('index', axis=1, inplace=True)
 
 
-print(df2)
-print(df2.tail(31))
-print(df_DHV_sorted.tail(31))
+# print(df2)
+# print(df2.tail(31))
+# print(df_DHV_sorted.tail(31))
 
 
 # with open('myfile.csv', newline='') as csvfile:
